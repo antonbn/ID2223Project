@@ -1,37 +1,25 @@
-import requests
+import io
+import sys
+import urllib.request
 import pandas as pd
-from keys import client_id
+from keys import visual_crossing_key
 
-pd.set_option('display.max_columns', None)
+start_date = '2020-12-19'
+end_date = '2022-12-19'
 
-endpoint = 'https://frost.met.no/observations/v0.jsonld'
-parameters = {
-    'sources': 'SN249800',
-    'elements': 'mean(air_temperature P1D),sum(precipitation_amount P1D),mean(wind_speed P1D)',
-    'referencetime': '2020-04-01/2020-04-03',
-}
-# Issue an HTTP GET request
-r = requests.get(endpoint, parameters, auth=(client_id,''))
-# Extract JSON data
-json = r.json()
+try: 
+  ResultBytes = urllib.request.urlopen(f"https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/Stockholm/{start_date}/{end_date}?unitGroup=metric&elements=name%2Clatitude%2Clongitude%2Ctemp%2Cwindgust%2Cwindspeed%2Cwinddir%2Ccloudcover%2Csource&include=days%2Cobs&key={visual_crossing_key}&contentType=csv").read().decode('UTF-8')
+ 
+  df = pd.read_csv(io.StringIO(ResultBytes))
+  df['date'] = pd.date_range(start=start_date, periods=len(df), freq='D')
+  print(df)
+  df.to_csv('weather.csv')
 
-# Check if the request worked, print out any errors
-if r.status_code == 200:
-    data = json['data']
-    print('Data retrieved from frost.met.no!')
-else:
-    print('Error! Returned status code %s' % r.status_code)
-    print('Message: %s' % json['error']['message'])
-    print('Reason: %s' % json['error']['reason'])
-
-# This will return a Dataframe with all of the observations in a table format
-df = pd.DataFrame()
-for i in range(len(data)):
-    row = pd.DataFrame(data[i]['observations'])
-    row['referenceTime'] = data[i]['referenceTime']
-    row['sourceId'] = data[i]['sourceId']
-    df = df.append(row)
-
-df = df.reset_index()
-
-print(df.head())
+except urllib.error.HTTPError  as e:
+  ErrorInfo= e.read().decode() 
+  print('Error code: ', e.code, ErrorInfo)
+  sys.exit()
+except  urllib.error.URLError as e:
+  ErrorInfo= e.read().decode() 
+  print('Error code: ', e.code,ErrorInfo)
+  sys.exit()
