@@ -11,7 +11,7 @@ energy_data = pd.DataFrame()
 if not exists('data/energy.csv'):
 	client = EntsoePandasClient(api_key=entsoe_key)
 
-	start_date = pd.Timestamp('20201219', tz='Europe/Berlin')
+	start_date = pd.Timestamp('20201212', tz='Europe/Berlin')
 	end_date = pd.Timestamp('20221219', tz='Europe/Berlin')
 	country_code = 'SE_3'
 
@@ -37,7 +37,7 @@ if not exists('data/energy.csv'):
 
 		time.sleep(61)
 
-	energy_data.to_csv('dat/energy.csv')
+	energy_data.to_csv('data/energy.csv')
 else:
 	energy_data = pd.read_csv('data/energy.csv')
 
@@ -48,6 +48,17 @@ energy_data = energy_data.set_index('date')
 energy_data = energy_data.resample('D').mean()
 energy_data = energy_data.reset_index()
 energy_data['date'] = energy_data['date'].dt.strftime('%Y-%m-%d')
+energy_data['p_1'] = energy_data['price'].shift()
+energy_data['p_2'] = energy_data['price'].shift(2)
+energy_data['p_3'] = energy_data['price'].shift(3)
+energy_data['p_4'] = energy_data['price'].shift(4)
+energy_data['p_5'] = energy_data['price'].shift(5)
+energy_data['p_6'] = energy_data['price'].shift(6)
+energy_data['p_7'] = energy_data['price'].shift(7)
+energy_data = energy_data.dropna()
+energy_data = energy_data.reset_index(drop=True)
+energy_data = energy_data.drop(index=0)
+energy_data = energy_data.reset_index(drop=True)
 
 project = hopsworks.login()
 fs = project.get_feature_store()
@@ -55,6 +66,6 @@ fs = project.get_feature_store()
 energy_fg = fs.get_or_create_feature_group(
 	name="energy_prices",
 	version=1,
-	primary_key=['date', 'load', 'filling_rate'], 
+	primary_key=['date', 'load', 'filling_rate','p_1','p_2','p_3','p_4','p_5','p_6','p_7'], 
 	description="daily energy prices")
 energy_fg.insert(energy_data, write_options={"wait_for_job" : False})
