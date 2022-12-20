@@ -3,6 +3,7 @@ from os.path import exists
 from keys import entsoe_key
 import pandas as pd
 import time
+import hopsworks
 
 energy_data = pd.DataFrame()
 
@@ -41,8 +42,19 @@ else:
 	energy_data = pd.read_csv('data/energy.csv')
 
 energy_data = energy_data.dropna(axis=0)
-energy_data.columns = ['date', 'price', 'load', 'filling rate']
+energy_data.columns = ['date', 'price', 'load', 'filling_rate']
 energy_data['date'] = pd.to_datetime(energy_data['date'])
 energy_data = energy_data.set_index('date')
 energy_data = energy_data.resample('D').mean()
+energy_data = energy_data.reset_index()
+energy_data['date'] = energy_data['date'].dt.strftime('%Y-%m-%d')
 
+project = hopsworks.login()
+fs = project.get_feature_store()
+
+energy_fg = fs.get_or_create_feature_group(
+	name="energy_prices",
+	version=1,
+	primary_key=['date', 'load', 'filling_rate'], 
+	description="daily energy prices")
+energy_fg.insert(energy_data, write_options={"wait_for_job" : False})
