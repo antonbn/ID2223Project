@@ -23,18 +23,18 @@ country_code = "SE_3"
 load = client.query_load_forecast(country_code, start=start_date, end=end_date)
 i = 0
 while True:
-    if i < -10:
+    if i < -40:
         sys.exit()
     try:
         aggregate_water_reservoirs_and_hydro_storage = (
             client.query_aggregate_water_reservoirs_and_hydro_storage(
                 country_code,
                 start=pd.Timestamp(
-                    datetime.datetime.now() - datetime.timedelta(days=i),
+                    datetime.datetime.now() + datetime.timedelta(days=i),
                     tz="Europe/Berlin",
                 ),
                 end=pd.Timestamp(
-                    datetime.datetime.now() + datetime.timedelta(days=8 - i),
+                    datetime.datetime.now() + datetime.timedelta(days=8 + i),
                     tz="Europe/Berlin",
                 ),
             )
@@ -43,10 +43,26 @@ while True:
         break
     except:
         i -= 1
-
+        print(
+            "i: ",
+            i,
+            "start: ",
+            pd.Timestamp(
+                datetime.datetime.now() + datetime.timedelta(days=i),
+                tz="Europe/Berlin",
+            ),
+            "end: ",
+            pd.Timestamp(
+                datetime.datetime.now() + datetime.timedelta(days=8 + i),
+                tz="Europe/Berlin",
+            ),
+        )
+print('load: ', load)
+print('hydro storage: ', aggregate_water_reservoirs_and_hydro_storage)
 energy_data = pd.concat([load, aggregate_water_reservoirs_and_hydro_storage], axis=1)
 energy_data = energy_data.ffill()
 
+print('energy data: ',energy_data)
 
 energy_data = energy_data.dropna(axis=0)
 energy_data.columns = ["date", "load", "filling_rate"]
