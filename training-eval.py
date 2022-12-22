@@ -34,17 +34,17 @@ train_data, prices = feature_view.get_training_data(1)[0], feature_view.get_trai
 train_data = train_data.set_index('date')
 print(train_data.head(10))
 
-c = CurrencyConverter()
-def currconvert(row):
-    return (c.convert(row,'EUR','SEK') / 1000) * 100 
+# c = CurrencyConverter()
+# def currconvert(row):
+#     return (c.convert(row,'EUR','SEK') / 1000) * 100 
 
-train_data['p_1'] = train_data['p_1'].apply(currconvert)
-train_data['p_2'] = train_data['p_2'].apply(currconvert)
-train_data['p_3'] = train_data['p_3'].apply(currconvert)
-train_data['p_4'] = train_data['p_4'].apply(currconvert)
-train_data['p_5'] = train_data['p_5'].apply(currconvert)
-train_data['p_6'] = train_data['p_6'].apply(currconvert)
-train_data['p_7'] = train_data['p_7'].apply(currconvert)
+# train_data['p_1'] = train_data['p_1'].apply(currconvert)
+# train_data['p_2'] = train_data['p_2'].apply(currconvert)
+# train_data['p_3'] = train_data['p_3'].apply(currconvert)
+# train_data['p_4'] = train_data['p_4'].apply(currconvert)
+# train_data['p_5'] = train_data['p_5'].apply(currconvert)
+# train_data['p_6'] = train_data['p_6'].apply(currconvert)
+# train_data['p_7'] = train_data['p_7'].apply(currconvert)
 # train_data['p_1'] = train_data.apply(lambda row: (c.convert(row['p_1'],'EUR','SEK') / 1000) * 100)
 # train_data['p_2'] = train_data.apply(lambda row: (c.convert(row['p_2'],'EUR','SEK') / 1000) * 100)
 # train_data['p_3'] = train_data.apply(lambda row: (c.convert(row['p_3'],'EUR','SEK') / 1000) * 100)
@@ -67,12 +67,12 @@ X, y = train_data, prices
 # print('type y: ', type(y))
 
 
-y = y.apply(currconvert, axis=1)
+# y = y.apply(currconvert, axis=1)
  
-cv = RepeatedKFold(n_splits=10, n_repeats=3, random_state=1)
-scores = cross_val_score(model, X, y, scoring='neg_mean_absolute_error', cv=cv, n_jobs=-1)
-scores = absolute(scores)
-print('Mean MAE: %.3f (%.3f)' % (scores.mean(), scores.std()) )
+# cv = RepeatedKFold(n_splits=10, n_repeats=3, random_state=1)
+# scores = cross_val_score(model, X, y, scoring='neg_mean_absolute_error', cv=cv, n_jobs=-1)
+# scores = absolute(scores)
+# print('Mean MAE: %.3f (%.3f)' % (scores.mean(), scores.std()) )
 
 # params = { 'objective' : ['reg:squarederror', 'reg:squaredlogerror','reg:logistic','reg:pseudohubererror','reg:absoluteerror'],
 #             'max_depth': [3,4, 5, 6, 10, 15, 20],
@@ -106,3 +106,4 @@ print('Mean MAE: %.3f (%.3f)' % (scores.mean(), scores.std()) )
 # clf.fit(X, y)
 # print("Best parameters:", clf.best_params_)
 # print("Lowest RMSE: ", (-clf.best_score_)**(1/2.0))
+

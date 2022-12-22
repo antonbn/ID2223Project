@@ -8,7 +8,7 @@ import hopsworks
 energy_data = pd.DataFrame()
 
 
-if not exists('data/energy.csv'):
+if not exists('../data/energy.csv'):
 	client = EntsoePandasClient(api_key=entsoe_key)
 
 	start_date = pd.Timestamp('20201212', tz='Europe/Berlin')
@@ -37,9 +37,9 @@ if not exists('data/energy.csv'):
 
 		time.sleep(61)
 
-	energy_data.to_csv('data/energy.csv')
+	energy_data.to_csv('../data/energy.csv')
 else:
-	energy_data = pd.read_csv('data/energy.csv')
+	energy_data = pd.read_csv('../data/energy.csv')
 
 energy_data = energy_data.dropna(axis=0)
 energy_data.columns = ['date', 'price', 'load', 'filling_rate']
