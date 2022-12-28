@@ -17,6 +17,7 @@ if LOCAL == False:
 
 def g():
     import datetime
+    import os
 
     import hopsworks
     import pandas as pd
@@ -28,7 +29,7 @@ def g():
     dates_data["dayofyear"] = dates_data["date"].dt.dayofyear
     dates_data["dayofweek"] = dates_data["date"].dt.dayofweek
     dates_data["month"] = dates_data["date"].dt.month
-    dates_data["week"] = dates_data["date"].dt.isocalendar().week
+    dates_data["week"] = dates_data["date"].dt.isocalendar().week.astype("int64")
 
     dates_data = dates_data.dropna(axis=0)
     dates_data["date"] = pd.to_datetime(dates_data["date"])

@@ -9,7 +9,7 @@ import pandas as pd
 
 from keys import visual_crossing_key
 
-if not exists("data/dates.csv"):
+if not exists("../data/dates.csv"):
     start_date = "2020-12-19"
     end_date = "2022-12-19"
     date_list = pd.date_range(start=start_date, end=end_date)
@@ -20,7 +20,7 @@ if not exists("data/dates.csv"):
     dates_data["week"] = dates_data["date"].dt.isocalendar().week
     dates_data.to_csv("data/dates.csv")
 else:
-    dates_data = pd.read_csv("data/dates.csv", index_col=0)
+    dates_data = pd.read_csv("../data/dates.csv", index_col=0)
 
 
 dates_data = dates_data.dropna(axis=0)

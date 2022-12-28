@@ -1,5 +1,4 @@
 import os
-import sys
 
 import modal
 
@@ -7,7 +6,9 @@ LOCAL = False
 
 if LOCAL == False:
     stub = modal.Stub("energy-feature-pipeline-daily")
-    image = modal.Image.debian_slim().pip_install(["hopsworks", "entsoe-py", "pandas"])
+    image = modal.Image.debian_slim().pip_install(
+        ["hopsworks", "entsoe-py", "pandas"]
+    )
 
     @stub.function(
         image=image,
@@ -29,9 +30,7 @@ def g():
 
     client = EntsoePandasClient(api_key=os.environ["ENTSOE_KEY"])
 
-    start_date = pd.Timestamp(
-        datetime.datetime.now() + datetime.timedelta(days=-7), tz="Europe/Berlin"
-    )
+    start_date = pd.Timestamp(datetime.datetime.now(), tz="Europe/Berlin")
     end_date = pd.Timestamp(
         datetime.datetime.now() + datetime.timedelta(days=1), tz="Europe/Berlin"
     )
@@ -40,35 +39,19 @@ def g():
     day_ahead_prices = client.query_day_ahead_prices(
         country_code, start=start_date, end=end_date
     )
-    load = client.query_load_forecast(country_code, start=start_date, end=end_date)
-    i = 0
-    while True:
-        if i < -40:
-            sys.exit()
-        try:
-            aggregate_water_reservoirs_and_hydro_storage = (
-                client.query_aggregate_water_reservoirs_and_hydro_storage(
-                    country_code,
-                    start=pd.Timestamp(
-                        datetime.datetime.now() + datetime.timedelta(days=i),
-                        tz="Europe/Berlin",
-                    ),
-                    end=pd.Timestamp(
-                        datetime.datetime.now() + datetime.timedelta(days=8 + i),
-                        tz="Europe/Berlin",
-                    ),
-                )
-            )
+    load = client.query_load(country_code, start=start_date, end=end_date)
+    aggregate_water_reservoirs_and_hydro_storage = (
+        client.query_aggregate_water_reservoirs_and_hydro_storage(
+            country_code, start=start_date, end=end_date
+        )
+    )
 
-            break
-        except:
-            i -= 1
     energy_data = pd.concat(
         [day_ahead_prices, load, aggregate_water_reservoirs_and_hydro_storage], axis=1
     )
     energy_data = energy_data.ffill()
+
     energy_data = energy_data.dropna(axis=0)
-    energy_data = energy_data.reset_index()
     energy_data.columns = ["date", "price", "load", "filling_rate"]
     energy_data["date"] = pd.to_datetime(energy_data["date"])
     energy_data = energy_data.set_index("date")
