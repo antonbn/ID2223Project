@@ -67,6 +67,8 @@ def g():
         [day_ahead_prices, load, aggregate_water_reservoirs_and_hydro_storage], axis=1
     )
     energy_data = energy_data.ffill()
+    if energy_data.isnull().values.any():
+        print(energy_data)
     energy_data = energy_data.dropna(axis=0)
     energy_data = energy_data.reset_index()
     energy_data.columns = ["date", "price", "load", "filling_rate"]

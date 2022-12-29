@@ -44,45 +44,47 @@ def train_fn():
     # You can read training data, randomly split into train/test sets of features (X) and labels (y)        
     X_train, X_test, y_train, y_test = feature_view.train_test_split(0.05)
     X_train, X_test = X_train.set_index('date'), X_test.set_index('date')
+    print('X_train: ', X_train.columns)
+    print('X_train dtypes: ', X_train.dtypes)
+    print('X_train type: ', type(X_train))
 
+    # model = XGBRegressor( n_estimators=600,max_depth=5, learning_rate=0.2, min_child_weight=5)
 
-    model = XGBRegressor( n_estimators=600,max_depth=5, learning_rate=0.2, min_child_weight=5)
+    # model.fit(X_train, y_train)
 
-    model.fit(X_train, y_train)
+    # # Evaluate model performance using the features from the test set (X_test)
+    # # print('xtest: ', X_test)
+    # y_pred = model.predict(X_test)
 
-    # Evaluate model performance using the features from the test set (X_test)
-    # print('xtest: ', X_test)
-    y_pred = model.predict(X_test)
+    # # Compare predictions (y_pred) with the labels in the test set (y_test)
+    # mae = mean_absolute_error(y_test, y_pred, multioutput='uniform_average')
 
-    # Compare predictions (y_pred) with the labels in the test set (y_test)
-    mae = mean_absolute_error(y_test, y_pred, multioutput='uniform_average')
+    # # We will now upload our model to the Hopsworks Model Registry. First get an object for the model registry.
+    # mr = project.get_model_registry()
 
-    # We will now upload our model to the Hopsworks Model Registry. First get an object for the model registry.
-    mr = project.get_model_registry()
+    # # The contents of the 'iris_model' directory will be saved to the model registry. Create the dir, first.
+    # model_dir="price_model"
+    # if os.path.isdir(model_dir) == False:
+    #     os.mkdir(model_dir)
 
-    # The contents of the 'iris_model' directory will be saved to the model registry. Create the dir, first.
-    model_dir="price_model"
-    if os.path.isdir(model_dir) == False:
-        os.mkdir(model_dir)
+    # # Save both our model and the confusion matrix to 'model_dir', whose contents will be uploaded to the model registry
+    # joblib.dump(model, model_dir + "/price_model.pkl")
 
-    # Save both our model and the confusion matrix to 'model_dir', whose contents will be uploaded to the model registry
-    joblib.dump(model, model_dir + "/price_model.pkl")
+    # # Specify the schema of the model's input/output using the features (X_train) and labels (y_train)
+    # input_schema = Schema(X_train)
+    # output_schema = Schema(y_train)
+    # model_schema = ModelSchema(input_schema, output_schema)
 
-    # Specify the schema of the model's input/output using the features (X_train) and labels (y_train)
-    input_schema = Schema(X_train)
-    output_schema = Schema(y_train)
-    model_schema = ModelSchema(input_schema, output_schema)
+    # # Create an entry in the model registry that includes the model's name, desc, metrics
+    # price_model = mr.python.create_model(
+    #     name="price_modal", 
+    #     metrics={"accuracy" : mae},
+    #     model_schema=model_schema,
+    #     description="electricity price predictor"
+    # )
 
-    # Create an entry in the model registry that includes the model's name, desc, metrics
-    price_model = mr.python.create_model(
-        name="price_modal", 
-        metrics={"accuracy" : mae},
-        model_schema=model_schema,
-        description="electricity price predictor"
-    )
-
-    # Upload the model to the model registry, including all files in 'model_dir'
-    price_model.save(model_dir)
+    # # Upload the model to the model registry, including all files in 'model_dir'
+    # price_model.save(model_dir)
 
 if __name__ == "__main__":
     if LOCAL == True :
