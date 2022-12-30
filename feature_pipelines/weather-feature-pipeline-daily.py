@@ -67,12 +67,16 @@ def g():
     if nan_cols:
         if "windgust" in nan_cols and "windspeed" not in nan_cols:
             weather_data["windgust"] = weather_data["windspeed"]
-    print(weather_data)
+
+        print(nan_cols)
 
     # weather_data = weather_data.dropna(axis=0)
     weather_data = weather_data[
         ["temp", "windgust", "windspeed", "winddir", "cloudcover", "date"]
     ].copy()
+    weather_data["windgust"], weather_data["windspeed"] = weather_data[
+        "windgust"
+    ].astype("float"), weather_data["winddir"].astype("float")
     weather_data["date"] = pd.to_datetime(weather_data["date"])
     weather_data = weather_data.set_index("date")
     weather_data = weather_data.reset_index()
