@@ -11,7 +11,7 @@ if LOCAL == False:
 
     @stub.function(
         image=image,
-        schedule=modal.Cron("08 00 * * *"),
+        schedule=modal.Cron("00 08 * * *"),
         secret=modal.Secret.from_name("id2223-project"),
     )
     def f():

@@ -3,6 +3,7 @@ import os
 import modal
 
 # from keys import visual_crossing_key
+
 LOCAL = False
 
 if LOCAL == False:
@@ -34,6 +35,7 @@ def g():
     # print(f'startdate: {start_date} enddate: {end_date}')
     # start_date = '2022-08-01'
     # end_date = '2022-12-01'
+
     visual_crossing_key = os.environ["VISUAL_CROSSING_KEY"]
 
     try:
@@ -76,11 +78,17 @@ def g():
     ].copy()
     weather_data["windgust"], weather_data["windspeed"] = weather_data[
         "windgust"
-    ].astype("float"), weather_data["winddir"].astype("float")
+    ].astype("float"), weather_data["windspeed"].astype("float")
+    weather_data["temp"] = weather_data["temp"].astype("float")
+    weather_data["winddir"] = weather_data["winddir"].astype("float")
+    weather_data["cloudcover"] = weather_data["cloudcover"].astype("float")
+
     weather_data["date"] = pd.to_datetime(weather_data["date"])
     weather_data = weather_data.set_index("date")
     weather_data = weather_data.reset_index()
     weather_data["date"] = weather_data["date"].dt.strftime("%Y-%m-%d")
+
+    # print(weather_data.dtypes)
 
     project = hopsworks.login()
     fs = project.get_feature_store()

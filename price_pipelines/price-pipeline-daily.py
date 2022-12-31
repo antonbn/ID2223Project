@@ -1,9 +1,7 @@
 import datetime
 import os
-import sys
 
 import hopsworks
-import joblib
 import modal
 import pandas as pd
 
@@ -18,6 +16,7 @@ if LOCAL == False:
             "hopsworks",
             "pandas==1.5.2",
             "entsoe-py",
+            "beautifulsoup4",
         ]
     )
 
@@ -78,7 +77,7 @@ def g():
     price_data_fg = fs.get_or_create_feature_group(
         name="price_data",
         version=1,
-        primary_key=["date", "days_ahead"],
+        primary_key="date",
         description="actual prices",
     )
     price_data_fg.insert(price_data, write_options={"wait_for_job": False})
