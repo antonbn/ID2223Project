@@ -36,7 +36,7 @@ def g():
     dates_data = dates_data.set_index("date")
     dates_data = dates_data.reset_index()
 
-    dates_data["date"] = dates_data["date"].dt.strftime("%Y-%m-%d")
+    dates_data["date"] = dates_data["date"].dt.strftime("%Y-%m-%d").astype("string")
 
     project = hopsworks.login()
     fs = project.get_feature_store()

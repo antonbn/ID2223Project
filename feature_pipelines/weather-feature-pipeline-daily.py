@@ -86,7 +86,7 @@ def g():
     weather_data["date"] = pd.to_datetime(weather_data["date"])
     weather_data = weather_data.set_index("date")
     weather_data = weather_data.reset_index()
-    weather_data["date"] = weather_data["date"].dt.strftime("%Y-%m-%d")
+    weather_data["date"] = weather_data["date"].dt.strftime("%Y-%m-%d").astype("string")
 
     # print(weather_data.dtypes)
 
