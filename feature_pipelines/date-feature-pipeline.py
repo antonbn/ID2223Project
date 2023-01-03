@@ -7,7 +7,7 @@ from os.path import exists
 import hopsworks
 import pandas as pd
 
-from keys import visual_crossing_key
+from utils.utils.keys import visual_crossing_key
 
 if not exists("../data/dates.csv"):
     start_date = "2020-12-19"
@@ -24,7 +24,7 @@ else:
 
 
 dates_data = dates_data.dropna(axis=0)
-dates_data["date"] = pd.to_datetime(dates_data["date"])
+dates_data["date"] = pd.to_datetime(dates_data["date"]) 
 dates_data = dates_data.set_index("date")
 # print(dates_data)
 dates_data = dates_data.reset_index()
