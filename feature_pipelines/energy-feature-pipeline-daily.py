@@ -80,7 +80,7 @@ def g():
     energy_data = energy_data.set_index("date")
     energy_data = energy_data.resample("D").mean()
     energy_data = energy_data.reset_index()
-    energy_data["date"] = energy_data["date"].dt.strftime("%Y-%m-%d").astype("string")
+    energy_data["date"] = energy_data["date"].dt.strftime("%Y-%m-%d")
     energy_data["p_1"] = energy_data["price"].shift()
     energy_data["p_2"] = energy_data["price"].shift(2)
     energy_data["p_3"] = energy_data["price"].shift(3)
@@ -115,13 +115,18 @@ def g():
         ],
         description="daily energy prices",
     )
+
     # print('energy feature group')
     # print(energy_fg.read().iloc[[-1]])
     # print(type(energy_fg.read().iloc[[-1]]))
     # energy_fg.commit_delete_record(energy_fg.read().iloc[[-1]])
     # print(energy_fg.read())
     
-    energy_fg.insert(energy_data, write_options={"wait_for_job": False})
+    try:
+        energy_fg.insert(energy_data, write_options={"wait_for_job": False})
+    except:
+        energy_data["date"] = energy_data["date"].astype("string")
+        energy_fg.insert(energy_data, write_options={"wait_for_job": False})
 
 
 if __name__ == "__main__":
