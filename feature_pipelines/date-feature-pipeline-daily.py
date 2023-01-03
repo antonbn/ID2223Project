@@ -1,10 +1,11 @@
 import modal
 
 LOCAL = False
+# LOCAL = True
 
 if LOCAL == False:
     stub = modal.Stub("date-feature-pipeline-daily")
-    image = modal.Image.debian_slim().pip_install(["hopsworks"])
+    image = modal.Image.debian_slim().pip_install(["hopsworks", "pandera"])
 
     @stub.function(
         image=image,
@@ -28,10 +29,31 @@ def g():
 
     import hopsworks
     import pandas as pd
+    import pandera as pa
+    from pandera import Check, Column, DataFrameSchema
 
     from utils import get_dates_data
 
     dates_data = get_dates_data(datetime.datetime.now(), datetime.datetime.now())
+
+    schema = DataFrameSchema(
+        {
+            "date": Column(
+                checks=[
+                    Check(
+                        lambda d: bool(datetime.datetime.strptime(d, "%Y-%m-%d")),
+                        element_wise=True,
+                    ),
+                ]
+            ),
+            "dayofyear": Column(int, Check.in_range(1, 366)),
+            "dayofweek": Column(int, Check.in_range(0, 6)),
+            "month": Column(int, Check.in_range(1, 12)),
+            "week": Column(int, Check.in_range(0, 53)),
+        }
+    )
+
+    dates_data = schema.validate(dates_data)
 
     project = hopsworks.login()
     fs = project.get_feature_store()
@@ -42,7 +64,12 @@ def g():
         primary_key=["date", "dayofyear", "dayofweek", "month", "week"],
         description="date features",
     )
-    date_fg.insert(dates_data, write_options={"wait_for_job": False})
+
+    try:
+        date_fg.insert(dates_data, write_options={"wait_for_job": False})
+    except:
+        dates_data["date"] = dates_data["date"].astype("string")
+        date_fg.insert(dates_data, write_options={"wait_for_job": False})
 
 
 if __name__ == "__main__":

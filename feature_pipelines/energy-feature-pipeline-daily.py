@@ -5,11 +5,13 @@ import modal
 
 LOCAL = False
 # LOCAL = True
-# from keys import entsoe_key
+# from utils import keys.entsoe_key
 
 if LOCAL == False:
     stub = modal.Stub("energy-feature-pipeline-daily")
-    image = modal.Image.debian_slim().pip_install(["hopsworks", "entsoe-py", "pandas"])
+    image = modal.Image.debian_slim().pip_install(
+        ["hopsworks", "entsoe-py", "pandas", "pandera"]
+    )
 
     @stub.function(
         image=image,
@@ -25,9 +27,8 @@ def g():
 
     import hopsworks
     import pandas as pd
-
-    # pandas_image = modal.Image.conda().conda_install("pandas==1.4.0")
     from entsoe import EntsoePandasClient
+    from pandera import Check, Column, DataFrameSchema
 
     client = EntsoePandasClient(api_key=os.environ["ENTSOE_KEY"])
     # client = EntsoePandasClient(api_key=entsoe_key)
@@ -84,11 +85,35 @@ def g():
 
     for i in range(1, 8):
         energy_data[f"p_{i}"] = energy_data["price"].shift(i)
-    
+
     energy_data = energy_data.dropna()
     energy_data = energy_data.reset_index(drop=True)
     energy_data = energy_data.drop(index=0)
     energy_data = energy_data.reset_index(drop=True)
+
+    schema = DataFrameSchema(
+        {
+            "date": Column(
+                checks=[
+                    Check(
+                        lambda d: bool(datetime.datetime.strptime(d, "%Y-%m-%d")),
+                        element_wise=True,
+                    ),
+                ]
+            ),
+            "price": Column(float),
+            "load": Column(float, Check.greater_than_or_equal_to(0)),
+            "filling_rate": Column(float, Check.greater_than_or_equal_to(0)),
+            "p_1": Column(float),
+            "p_2": Column(float),
+            "p_3": Column(float),
+            "p_4": Column(float),
+            "p_5": Column(float),
+            "p_6": Column(float),
+            "p_7": Column(float),
+        }
+    )
+    energy_data = schema.validate(energy_data)
 
     project = hopsworks.login()
     fs = project.get_feature_store()

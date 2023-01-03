@@ -4,8 +4,11 @@ from os.path import exists
 import hopsworks
 import pandas as pd
 from entsoe import EntsoePandasClient
+from pandera import Check, Column, DataFrameSchema
+import datetime
 
-from utils.utils.keys import entsoe_key
+#from utils.utils.keys import entsoe_key
+from keys import entsoe_key
 
 energy_data = pd.DataFrame()
 
@@ -69,6 +72,31 @@ energy_data = energy_data.dropna()
 energy_data = energy_data.reset_index(drop=True)
 energy_data = energy_data.drop(index=0)
 energy_data = energy_data.reset_index(drop=True)
+
+schema = DataFrameSchema(
+        {
+            "date": Column(
+                checks=[
+                    Check(
+                        lambda d: bool(datetime.datetime.strptime(d, "%Y-%m-%d")),
+                        element_wise=True,
+                    ),
+                ]
+            ),
+            "price": Column(float),
+            "load": Column(float, Check.greater_than_or_equal_to(0)),
+            "filling_rate": Column(float, Check.greater_than_or_equal_to(0)),
+            "p_1": Column(float),
+            "p_2": Column(float),
+            "p_3": Column(float),
+            "p_4": Column(float),
+            "p_5": Column(float),
+            "p_6": Column(float),
+            "p_7": Column(float),
+        }
+    )
+
+energy_data = schema.validate(energy_data)
 
 project = hopsworks.login()
 fs = project.get_feature_store()
