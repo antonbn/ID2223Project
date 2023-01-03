@@ -1,4 +1,4 @@
-from keys import visual_crossing_key
+from utils.utils.keys import visual_crossing_key
 from os.path import exists
 import io
 import sys
@@ -50,4 +50,5 @@ weather_fg = fs.get_or_create_feature_group(
   version=1,
   primary_key=['temp', 'windgust', 'windspeed', 'winddir', 'cloudcover', 'date'], 
   description="daily weather for Stockholm")
+
 weather_fg.insert(weather_data, write_options={"wait_for_job" : False})

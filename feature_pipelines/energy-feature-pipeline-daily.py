@@ -4,8 +4,8 @@ import sys
 import modal
 
 LOCAL = False
-#LOCAL = True
-#from keys import entsoe_key
+# LOCAL = True
+# from keys import entsoe_key
 
 if LOCAL == False:
     stub = modal.Stub("energy-feature-pipeline-daily")
@@ -30,7 +30,7 @@ def g():
     from entsoe import EntsoePandasClient
 
     client = EntsoePandasClient(api_key=os.environ["ENTSOE_KEY"])
-    #client = EntsoePandasClient(api_key=entsoe_key)
+    # client = EntsoePandasClient(api_key=entsoe_key)
 
     start_date = pd.Timestamp(
         datetime.datetime.now() + datetime.timedelta(days=-7), tz="Europe/Berlin"
@@ -81,19 +81,14 @@ def g():
     energy_data = energy_data.resample("D").mean()
     energy_data = energy_data.reset_index()
     energy_data["date"] = energy_data["date"].dt.strftime("%Y-%m-%d")
-    energy_data["p_1"] = energy_data["price"].shift()
-    energy_data["p_2"] = energy_data["price"].shift(2)
-    energy_data["p_3"] = energy_data["price"].shift(3)
-    energy_data["p_4"] = energy_data["price"].shift(4)
-    energy_data["p_5"] = energy_data["price"].shift(5)
-    energy_data["p_6"] = energy_data["price"].shift(6)
-    energy_data["p_7"] = energy_data["price"].shift(7)
+
+    for i in range(1, 8):
+        energy_data[f"p_{i}"] = energy_data["price"].shift(i)
+    
     energy_data = energy_data.dropna()
     energy_data = energy_data.reset_index(drop=True)
     energy_data = energy_data.drop(index=0)
     energy_data = energy_data.reset_index(drop=True)
-    # print('after: ')
-    # print(energy_data.dtypes)
 
     project = hopsworks.login()
     fs = project.get_feature_store()
@@ -116,12 +111,6 @@ def g():
         description="daily energy prices",
     )
 
-    # print('energy feature group')
-    # print(energy_fg.read().iloc[[-1]])
-    # print(type(energy_fg.read().iloc[[-1]]))
-    # energy_fg.commit_delete_record(energy_fg.read().iloc[[-1]])
-    # print(energy_fg.read())
-    
     try:
         energy_fg.insert(energy_data, write_options={"wait_for_job": False})
     except:

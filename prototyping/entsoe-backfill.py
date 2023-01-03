@@ -5,7 +5,7 @@ import hopsworks
 import pandas as pd
 from entsoe import EntsoePandasClient
 
-from keys import entsoe_key
+from utils.utils.keys import entsoe_key
 
 if not exists("data/entsoe_backfill.csv"):
 

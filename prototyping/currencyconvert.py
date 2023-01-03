@@ -1,5 +1,5 @@
 from entsoe import EntsoePandasClient
-from keys import entsoe_key
+from utils.utils.keys import entsoe_key
 import pandas as pd
 import time
 import numpy as np
