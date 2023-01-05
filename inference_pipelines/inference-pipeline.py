@@ -8,7 +8,7 @@ import modal
 import pandas as pd
 
 LOCAL = False
-
+# LOCAL = True
 # from keys import entsoe_key, visual_crossing_key
 
 
@@ -22,6 +22,7 @@ if LOCAL == False:
             "pandas==1.5.2",
             "entsoe-py",
             "scikit-learn==1.2.0",
+            "pandera[io]",
         ]
     )
 
@@ -34,6 +35,10 @@ if LOCAL == False:
             modal.Mount(
                 local_dir=r"C:/Users/Isac/Documents/CDATE5 ML2/ID2223/project/utils/utils/",
                 remote_dir="/",
+            ),
+            modal.Mount(
+                local_dir=r"C:/Users/Isac/Documents/CDATE5 ML2/ID2223/project/pandera_schemas/",
+                remote_dir="/panderas_schemas",
             ),
         ],
     )
@@ -76,7 +81,7 @@ def get_weather_data():
         ErrorInfo = e.read().decode()
         print("Error code: ", e.code, ErrorInfo)
         sys.exit()
-    
+
     weather_data = weather_data.dropna(axis=0)
     weather_data = weather_data[
         ["temp", "windgust", "windspeed", "winddir", "cloudcover", "date"]
@@ -110,7 +115,7 @@ def get_energy_data():
     end_date = pd.Timestamp(
         datetime.datetime.now() + datetime.timedelta(days=8), tz="Europe/Berlin"
     )
-    
+
     country_code = "SE_3"
 
     load_forecast = client.query_load_forecast(
@@ -122,7 +127,7 @@ def get_energy_data():
     ) / 2
 
     last_day_values = query_last_day().reset_index()
-    
+
     energy_data = pd.DataFrame({"date": pd.date_range(start_date, end_date)})
     energy_data["load"] = load_forecast["load"]
     energy_data["filling_rate"] = last_day_values["filling_rate"]
@@ -160,17 +165,32 @@ def query_last_day():
 
 
 def g():
+    from pandera import DataFrameSchema
+
     project = hopsworks.login()
     mr = project.get_model_registry()
     model = mr.get_model("price_modal", version=1)
     model_dir = model.download()
     model = joblib.load(model_dir + "/price_model.pkl")
 
-    weather_data, dates_data, energy_data = (
+    weather_data, energy_data, dates_data = (
         get_weather_data(),
         get_energy_data(),
         get_dates(),
     )
+    weather_schema = DataFrameSchema.from_json(
+        r"/panderas_schemas/weather-feature-pipeline-daily-schema.json"
+    )
+    energy_schema = DataFrameSchema.from_json(
+        r"/panderas_schemas/energy-feature-pipeline-daily-schema.json"
+    ).remove_columns(["price", "p_1", "p_2", "p_3", "p_4", "p_5", "p_6", "p_7"])
+    dates_schema = DataFrameSchema.from_json(
+        r"/panderas_schemas/date-feature-pipeline-daily-schema.json"
+    )
+
+    weather_data = weather_schema.validate(weather_data)
+    energy_data = energy_schema.validate(energy_data)
+    dates_data = dates_schema.validate(dates_data)
 
     wd = weather_data.merge(dates_data, on="date")
     features = wd.merge(energy_data, on="date")
@@ -225,7 +245,7 @@ def g():
         price_pred_day_plus_6,
         price_pred_day_plus_7,
     ]
-    
+
     fs = project.get_feature_store()
 
     price_pred_fg = fs.get_or_create_feature_group(

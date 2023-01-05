@@ -31,6 +31,7 @@ if LOCAL == False:
 
 def g():
     from forex_python.converter import CurrencyRates
+    from pandera import Check, Column, DataFrameSchema
 
     c = CurrencyRates()
     project = hopsworks.login()
@@ -47,9 +48,25 @@ def g():
     #             )
     # print(day_ahead_prices.mean())
     combined = combined.loc[:, ~combined.columns.str.contains('^Unnamed')]
+    schema = DataFrameSchema(
+        {
+        "date": Column(
+            checks=[
+                Check(
+                    lambda d: bool(datetime.datetime.strptime(d, "%Y-%m-%d")),
+                    element_wise=True,
+                ),
+            ]
+        ),
+        "entsoe_avg": Column(float),
+        "elbruk_dagspris": Column(float),
+    }
+    )
+    combined = schema.validate(combined)
+    schema.to_json("../pandera_schemas/price-pipeline-daily-schema.json")
     # print(combined)
 
-    # # print(price_predictions)
+    # print(price_predictions)
     fs = project.get_feature_store()
 
     price_data_fg = fs.get_feature_group(

@@ -5,15 +5,22 @@ import modal
 # from keys import visual_crossing_key
 
 LOCAL = False
+# LOCAL = True
 
 if LOCAL == False:
     stub = modal.Stub("weather-feature-pipeline-daily")
-    image = modal.Image.debian_slim().pip_install(["hopsworks"])
+    image = modal.Image.debian_slim().pip_install(["hopsworks", "pandera[io]"])
 
     @stub.function(
         image=image,
         schedule=modal.Cron("00 08 * * *"),
         secret=modal.Secret.from_name("id2223-project"),
+        mounts=[
+            modal.Mount(
+                local_dir=r"C:/Users/Isac/Documents/CDATE5 ML2/ID2223/project/pandera_schemas/",
+                remote_dir="/panderas_schemas",
+            ),
+        ],
     )
     def f():
         g()
@@ -27,6 +34,7 @@ def g():
 
     import hopsworks
     import pandas as pd
+    from pandera import Check, Column, DataFrameSchema
 
     start_date = str(
         (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
@@ -61,7 +69,7 @@ def g():
     if "windgust" in nan_cols and "windspeed" not in nan_cols:
         weather_data["windgust"] = weather_data["windspeed"]
 
-    print(nan_cols)
+        # print(nan_cols)
 
     weather_data = weather_data[
         ["temp", "windgust", "windspeed", "winddir", "cloudcover", "date"]
@@ -77,6 +85,12 @@ def g():
     weather_data = weather_data.set_index("date")
     weather_data = weather_data.reset_index()
     weather_data["date"] = weather_data["date"].dt.strftime("%Y-%m-%d")
+
+    schema = DataFrameSchema.from_json(
+        r"/panderas_schemas/weather-feature-pipeline-daily-schema.json"
+    )
+
+    weather_data = schema.validate(weather_data)
 
     project = hopsworks.login()
     fs = project.get_feature_store()

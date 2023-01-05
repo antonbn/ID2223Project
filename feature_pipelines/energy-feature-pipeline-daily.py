@@ -10,13 +10,19 @@ LOCAL = False
 if LOCAL == False:
     stub = modal.Stub("energy-feature-pipeline-daily")
     image = modal.Image.debian_slim().pip_install(
-        ["hopsworks", "entsoe-py", "pandas", "pandera"]
+        ["hopsworks", "entsoe-py", "pandas", "pandera[io]"]
     )
 
     @stub.function(
         image=image,
         schedule=modal.Cron("00 08 * * *"),
         secret=modal.Secret.from_name("id2223-project"),
+        mounts=[
+            modal.Mount(
+                local_dir=r"C:/Users/Isac/Documents/CDATE5 ML2/ID2223/project/pandera_schemas/",
+                remote_dir="/panderas_schemas",
+            ),
+        ],
     )
     def f():
         g()
@@ -91,28 +97,10 @@ def g():
     energy_data = energy_data.drop(index=0)
     energy_data = energy_data.reset_index(drop=True)
 
-    schema = DataFrameSchema(
-        {
-            "date": Column(
-                checks=[
-                    Check(
-                        lambda d: bool(datetime.datetime.strptime(d, "%Y-%m-%d")),
-                        element_wise=True,
-                    ),
-                ]
-            ),
-            "price": Column(float),
-            "load": Column(float, Check.greater_than_or_equal_to(0)),
-            "filling_rate": Column(float, Check.greater_than_or_equal_to(0)),
-            "p_1": Column(float),
-            "p_2": Column(float),
-            "p_3": Column(float),
-            "p_4": Column(float),
-            "p_5": Column(float),
-            "p_6": Column(float),
-            "p_7": Column(float),
-        }
+    schema = DataFrameSchema.from_json(
+        "/panderas_schemas/energy-feature-pipeline-daily-schema.json"
     )
+
     energy_data = schema.validate(energy_data)
 
     project = hopsworks.login()

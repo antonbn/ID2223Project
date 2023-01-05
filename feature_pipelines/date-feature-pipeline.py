@@ -51,6 +51,7 @@ schema = DataFrameSchema(
         }
     )
 dates_data = schema.validate(dates_data)
+schema.to_json('pandera_schemas/date-feature-pipeline-daily-schema.json')
 
 project = hopsworks.login()
 fs = project.get_feature_store()

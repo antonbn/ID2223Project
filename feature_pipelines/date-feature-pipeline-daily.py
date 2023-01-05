@@ -5,7 +5,7 @@ LOCAL = False
 
 if LOCAL == False:
     stub = modal.Stub("date-feature-pipeline-daily")
-    image = modal.Image.debian_slim().pip_install(["hopsworks", "pandera"])
+    image = modal.Image.debian_slim().pip_install(["hopsworks", "pandera[io]"])
 
     @stub.function(
         image=image,
@@ -16,6 +16,10 @@ if LOCAL == False:
             modal.Mount(
                 local_dir=r"C:/Users/Isac/Documents/CDATE5 ML2/ID2223/project/utils/utils/",
                 remote_dir="/",
+            ),
+            modal.Mount(
+                local_dir=r"C:/Users/Isac/Documents/CDATE5 ML2/ID2223/project/pandera_schemas/",
+                remote_dir="/panderas_schemas",
             ),
         ],
     )
@@ -36,21 +40,8 @@ def g():
 
     dates_data = get_dates_data(datetime.datetime.now(), datetime.datetime.now())
 
-    schema = DataFrameSchema(
-        {
-            "date": Column(
-                checks=[
-                    Check(
-                        lambda d: bool(datetime.datetime.strptime(d, "%Y-%m-%d")),
-                        element_wise=True,
-                    ),
-                ]
-            ),
-            "dayofyear": Column(int, Check.in_range(1, 366)),
-            "dayofweek": Column(int, Check.in_range(0, 6)),
-            "month": Column(int, Check.in_range(1, 12)),
-            "week": Column(int, Check.in_range(0, 53)),
-        }
+    schema = DataFrameSchema.from_json(
+        r"/panderas_schemas/date-feature-pipeline-daily-schema.json"
     )
 
     dates_data = schema.validate(dates_data)

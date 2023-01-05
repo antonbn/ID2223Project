@@ -17,6 +17,7 @@ if LOCAL == False:
             "pandas==1.5.2",
             "entsoe-py",
             "beautifulsoup4",
+            "pandera[io]",
         ]
     )
 
@@ -24,6 +25,12 @@ if LOCAL == False:
         image=image,
         schedule=modal.Cron("05 01 * * *"),
         secret=modal.Secret.from_name("id2223-project"),
+        mounts=[
+            modal.Mount(
+                local_dir=r"C:/Users/Isac/Documents/CDATE5 ML2/ID2223/project/pandera_schemas/",
+                remote_dir="/panderas_schemas",
+            ),
+        ],
     )
     def f():
         g()
@@ -35,6 +42,7 @@ def g():
     import requests
     from bs4 import BeautifulSoup
     from entsoe import EntsoePandasClient
+    from pandera import Check, Column, DataFrameSchema
 
     client = EntsoePandasClient(api_key=os.environ["ENTSOE_KEY"])
     # client = EntsoePandasClient(api_key=entsoe_key)
@@ -70,6 +78,12 @@ def g():
         ],
         columns=["date", "entsoe_avg", "elbruk_dagspris"],
     )
+
+    schema = DataFrameSchema.from_json(
+        "/panderas_schemas/price-pipeline-daily-schema.json"
+    )
+
+    price_data = schema.validate(price_data)
 
     # # print(price_predictions)
     fs = project.get_feature_store()

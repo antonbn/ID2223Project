@@ -7,7 +7,7 @@ from entsoe import EntsoePandasClient
 from pandera import Check, Column, DataFrameSchema
 import datetime
 
-#from utils.utils.keys import entsoe_key
+from utils import entsoe_key
 from keys import entsoe_key
 
 energy_data = pd.DataFrame()
@@ -95,6 +95,7 @@ schema = DataFrameSchema(
             "p_7": Column(float),
         }
     )
+schema.to_json('../pandera_schemas/energy-feature-pipeline-daily-schema.json')
 
 energy_data = schema.validate(energy_data)
 
