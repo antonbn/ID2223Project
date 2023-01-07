@@ -8,9 +8,6 @@ import modal
 import pandas as pd
 
 LOCAL = False
-# LOCAL = True
-# from keys import entsoe_key, visual_crossing_key
-
 
 if LOCAL == False:
     stub = modal.Stub("inference-pipeline")
@@ -128,9 +125,31 @@ def get_energy_data():
 
     last_day_values = query_last_day().reset_index()
 
+    i = 0
+    while True:
+        if i < -40:
+            sys.exit()
+        try:
+            aggregate_water_reservoirs_and_hydro_storage = (
+                client.query_aggregate_water_reservoirs_and_hydro_storage(
+                    country_code,
+                    start=pd.Timestamp(
+                        datetime.datetime.now() + datetime.timedelta(days=i),
+                        tz="Europe/Berlin",
+                    ),
+                    end=pd.Timestamp(
+                        datetime.datetime.now() + datetime.timedelta(days=8 + i),
+                        tz="Europe/Berlin",
+                    ),
+                )
+            )
+
+            break
+        except:
+            i -= 1
     energy_data = pd.DataFrame({"date": pd.date_range(start_date, end_date)})
     energy_data["load"] = load_forecast["load"]
-    energy_data["filling_rate"] = last_day_values["filling_rate"]
+    energy_data["filling_rate"] = aggregate_water_reservoirs_and_hydro_storage[0]
     energy_data = energy_data.ffill()
     energy_data["p_1"] = last_day_values["price"]
     energy_data["p_2"] = last_day_values["p_1"]
@@ -148,7 +167,7 @@ def get_energy_data():
     energy_data.iloc[5, 7:] = energy_data.iloc[4, 6:-1]
     energy_data.iloc[6, 8:] = energy_data.iloc[5, 7:-1]
     energy_data.iloc[7, 9:] = energy_data.iloc[6, 8:-1]
-
+   
     return energy_data
 
 
@@ -195,40 +214,13 @@ def g():
     wd = weather_data.merge(dates_data, on="date")
     features = wd.merge(energy_data, on="date")
 
-    price_pred_day_plus_1 = model.predict(features.set_index("date").iloc[[0]])[0]
+    price_pred_list = []
+    for i in range(0, 7):
+        price_pred= model.predict(features.set_index("date").iloc[[i]])[0]
+        price_pred_list.append(price_pred)
 
-    for i in range(1, 8):
-        features.loc[i, f"p_{i}"] = price_pred_day_plus_1
-
-    price_pred_day_plus_2 = model.predict(features.set_index("date").iloc[[1]])[0]
-
-    for i in range(2, 8):
-        features.loc[i, f"p_{i - 1}"] = price_pred_day_plus_2
-
-    price_pred_day_plus_3 = model.predict(features.set_index("date").iloc[[2]])[0]
-
-    for i in range(3, 8):
-        features.loc[i, f"p_{i - 2}"] = price_pred_day_plus_3
-
-    price_pred_day_plus_4 = model.predict(features.set_index("date").iloc[[3]])[0]
-
-    for i in range(4, 8):
-        features.loc[i, f"p_{i - 3}"] = price_pred_day_plus_4
-
-    price_pred_day_plus_5 = model.predict(features.set_index("date").iloc[[4]])[0]
-
-    for i in range(5, 8):
-        features.loc[i, f"p_{i - 4}"] = price_pred_day_plus_5
-
-    price_pred_day_plus_6 = model.predict(features.set_index("date").iloc[[5]])[0]
-
-    for i in range(6, 8):
-        features.loc[i, f"p_{i - 5}"] = price_pred_day_plus_6
-
-    price_pred_day_plus_7 = model.predict(features.set_index("date").iloc[[6]])[0]
-
-    for i in range(7, 8):
-        features.loc[i, f"p_{i - 6}"] = price_pred_day_plus_7
+        for j in range(i + 1, 8):
+            features.loc[j, f"p_{j - i}"] = price_pred
 
     features = features.reset_index()
     features = features.drop(index=7)
@@ -236,16 +228,9 @@ def g():
     price_predictions = pd.DataFrame()
     price_predictions["date"] = features["date"]
     price_predictions["days_ahead"] = [i for i in range(1, 8)]
-    price_predictions["predicted_price"] = [
-        price_pred_day_plus_1,
-        price_pred_day_plus_2,
-        price_pred_day_plus_3,
-        price_pred_day_plus_4,
-        price_pred_day_plus_5,
-        price_pred_day_plus_6,
-        price_pred_day_plus_7,
-    ]
-
+    price_predictions["predicted_price"] = price_pred_list
+    print(price_predictions)
+    print(price_predictions["predicted_price"])
     fs = project.get_feature_store()
 
     price_pred_fg = fs.get_or_create_feature_group(

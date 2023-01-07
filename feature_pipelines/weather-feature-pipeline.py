@@ -1,4 +1,3 @@
-# from utils import visual_crossing_key
 import datetime
 import io
 import sys
@@ -7,7 +6,7 @@ from os.path import exists
 
 import hopsworks
 import pandas as pd
-from keys import visual_crossing_key
+from utils import visual_crossing_key
 from pandera import Check, Column, DataFrameSchema
 
 weather_data = pd.DataFrame()

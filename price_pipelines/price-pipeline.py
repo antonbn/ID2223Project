@@ -7,8 +7,6 @@ import pandas as pd
 
 LOCAL = True
 
-# from keys import entsoe_key, visual_crossing_key
-
 if LOCAL == False:
     stub = modal.Stub("price-pipeline-daily")
     image = modal.Image.debian_slim().pip_install(
