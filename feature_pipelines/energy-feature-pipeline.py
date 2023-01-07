@@ -8,7 +8,7 @@ from pandera import Check, Column, DataFrameSchema
 import datetime
 
 from utils import entsoe_key
-from keys import entsoe_key
+
 
 energy_data = pd.DataFrame()
 

@@ -7,8 +7,6 @@ import pandas as pd
 
 LOCAL = False
 
-# from keys import entsoe_key, visual_crossing_key
-
 if LOCAL == False:
     stub = modal.Stub("price-pipeline-daily")
     image = modal.Image.debian_slim().pip_install(
@@ -45,7 +43,6 @@ def g():
     from pandera import Check, Column, DataFrameSchema
 
     client = EntsoePandasClient(api_key=os.environ["ENTSOE_KEY"])
-    # client = EntsoePandasClient(api_key=entsoe_key)
 
     start_date = pd.Timestamp(datetime.datetime.now(), tz="Europe/Berlin")
     end_date = pd.Timestamp(
@@ -63,8 +60,6 @@ def g():
     soup = BeautifulSoup(page.content, "html.parser")
     elbruk_dagspris = soup.find_all("span", class_="info-box-number")[0].text
     elbruk_dagspris = float(elbruk_dagspris.replace(",", "."))
-
-    # print(day_ahead_prices.mean())
 
     price_data = pd.DataFrame(
         data=[
@@ -85,7 +80,6 @@ def g():
 
     price_data = schema.validate(price_data)
 
-    # # print(price_predictions)
     fs = project.get_feature_store()
 
     price_data_fg = fs.get_or_create_feature_group(

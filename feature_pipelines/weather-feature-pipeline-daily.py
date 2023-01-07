@@ -2,10 +2,7 @@ import os
 
 import modal
 
-# from keys import visual_crossing_key
-
 LOCAL = False
-# LOCAL = True
 
 if LOCAL == False:
     stub = modal.Stub("weather-feature-pipeline-daily")

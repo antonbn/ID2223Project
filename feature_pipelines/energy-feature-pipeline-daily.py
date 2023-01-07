@@ -4,8 +4,6 @@ import sys
 import modal
 
 LOCAL = False
-# LOCAL = True
-# from utils import keys.entsoe_key
 
 if LOCAL == False:
     stub = modal.Stub("energy-feature-pipeline-daily")
@@ -15,7 +13,7 @@ if LOCAL == False:
 
     @stub.function(
         image=image,
-        schedule=modal.Cron("00 08 * * *"),
+        schedule=modal.Cron("00 13 * * *"),
         secret=modal.Secret.from_name("id2223-project"),
         mounts=[
             modal.Mount(
