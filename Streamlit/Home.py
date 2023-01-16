@@ -9,7 +9,7 @@ import plotly.express as px
 import streamlit as st
 
 st.markdown(
-    """Predictions of daily average energy prices in Stockholm/SE3 for the upcoming 7 days."""
+    """Predictions of daily average energy prices (before taxes and fees) in Stockholm/SE3 for the upcoming 7 days."""
 )
 
 progressBar = st.progress(0)
@@ -41,13 +41,10 @@ def get_price():
     price_predictions["date"] = dates
     price_predictions["predicted price (SEK öre)"] = prices
 
-    # def currconvert(row):
-    #     return round(((c.convert('EUR','SEK',row) / 1000) * 100),2)
-    # price_predictions['predicted price (SEK öre)'] = price_predictions['predicted price (SEK öre)'].apply(currconvert)
     price_predictions["predicted price (SEK öre)"] = round(
         eur_sek_convert(price_predictions["predicted price (SEK öre)"]), 2
     )
-    # print(price_predictions)
+
     return price_predictions
 
 

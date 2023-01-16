@@ -5,10 +5,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.express as px
-# from forex_python.converter import CurrencyRates
-from utils import eur_sek_convert
 
 import streamlit as st
+
+from utils import eur_sek_convert
 
 st.markdown(
     """**Logging of predictions of daily average energy prices in Stockholm/SE3 for the upcoming 7 days**"""
@@ -24,11 +24,8 @@ price_pred_fg = fs.get_feature_group(name="price_predictions", version=1).read()
 pric_actual_fg = fs.get_feature_group(name="price_data", version=1).read()
 
 price_combined = pric_actual_fg.merge(price_pred_fg, on="date")
-price_combined["predicted_price"] = (
-    eur_sek_convert(price_combined["predicted_price"]))
-price_combined["entsoe_avg"] = (
-    eur_sek_convert(price_combined["entsoe_avg"])
-    )
+price_combined["predicted_price"] = eur_sek_convert(price_combined["predicted_price"])
+price_combined["entsoe_avg"] = eur_sek_convert(price_combined["entsoe_avg"])
 progressBar.progress(60)
 # print(price_combined)
 
@@ -40,6 +37,16 @@ total_mae_entsoe = (
 total_mae_elbruk = (
     sum(abs(price_combined["elbruk_dagspris"] - price_combined["predicted_price"]))
     / price_combined.shape[0]
+)
+
+total_rmse_entsoe = (
+    np.sqrt(sum(np.power((price_combined["entsoe_avg"] - price_combined["predicted_price"]),2))
+    / price_combined.shape[0])
+)
+
+total_rmse_elbruk = (
+    np.sqrt(sum(np.power((price_combined["elbruk_dagspris"] - price_combined["predicted_price"]),2))
+    / price_combined.shape[0])
 )
 
 days_ahead_mae_entsoe = [
@@ -58,6 +65,24 @@ days_ahead_mae_elbruk = [df for df in days_ahead_mae_elbruk if not df.empty]
 days_ahead_mae_elbruk = [
     sum(abs(df["elbruk_dagspris"] - df["predicted_price"])) / df.shape[0]
     for df in days_ahead_mae_elbruk
+]
+
+days_ahead_rmse_entsoe = [
+    price_combined.query(f"days_ahead == {i}") for i in range(1, 8)
+]
+days_ahead_rmse_entsoe = [df for df in days_ahead_rmse_entsoe if not df.empty]
+days_ahead_rmse_entsoe = [
+    np.sqrt(sum(np.power((df["entsoe_avg"] - df["predicted_price"]),2)) / df.shape[0])
+    for df in days_ahead_rmse_entsoe
+]
+
+days_ahead_rmse_elbruk = [
+    price_combined.query(f"days_ahead == {i}") for i in range(1, 8)
+]
+days_ahead_rmse_elbruk = [df for df in days_ahead_rmse_elbruk if not df.empty]
+days_ahead_rmse_elbruk = [
+    np.sqrt(sum(np.power((df["elbruk_dagspris"] - df["predicted_price"]),2)) / df.shape[0])
+    for df in days_ahead_rmse_elbruk
 ]
 
 progressBar.progress(70)
@@ -79,6 +104,28 @@ st.markdown("""**ENTSOE daily average price MAE (SEK ÖRE)**""")
 st.dataframe(data=entsoe_mae.style.background_gradient(axis="columns", cmap="YlOrRd"))
 st.markdown("""**elbruk.se dagspris MAE (SEK ÖRE)**""")
 st.dataframe(data=elbruk_mae.style.background_gradient(axis="columns", cmap="YlOrRd"))
+
+#####
+
+columns = ["total RMSE"] + [f"d + {i} RMSE" for i in range(1, 8)]
+entsoe_rmse_data = [total_rmse_entsoe] + [rmse for rmse in days_ahead_rmse_entsoe]
+entsoe_rmse_data += ["NaN"] * (8 - len(entsoe_rmse_data))
+entsoe_rmse_data = [entsoe_rmse_data]
+
+entsoe_rmse = pd.DataFrame(data=entsoe_rmse_data, columns=columns)
+
+
+elbruk_rmse_data = [total_rmse_elbruk] + [rmse for rmse in days_ahead_rmse_elbruk]
+elbruk_rmse_data += ["NaN"] * (8 - len(elbruk_rmse_data))
+elbruk_rmse_data = [elbruk_rmse_data]
+
+elbruk_rmse = pd.DataFrame(data=elbruk_rmse_data, columns=columns)
+
+st.markdown("""**ENTSOE daily average price RMSE (SEK ÖRE)**""")
+st.dataframe(data=entsoe_rmse.style.background_gradient(axis="columns", cmap="YlOrRd"))
+st.markdown("""**elbruk.se dagspris RMSE (SEK ÖRE)**""")
+st.dataframe(data=elbruk_rmse.style.background_gradient(axis="columns", cmap="YlOrRd"))
+
 progressBar.progress(80)
 
 latest_day = price_combined[price_combined["date"] == price_combined["date"].max()]
@@ -141,7 +188,5 @@ last_n_results = pd.DataFrame(
 )
 # print(last_n_results)
 st.markdown("""**Detailed logging for latest 10 days**""")
-st.dataframe(
-    data=last_n_results.style
-)
+st.dataframe(data=last_n_results.style)
 progressBar.progress(100)
