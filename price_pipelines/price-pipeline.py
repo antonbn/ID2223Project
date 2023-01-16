@@ -38,13 +38,6 @@ def g():
     entsoe = pd.read_csv('../data/entsoe_backfill_daily.csv')    
 
     combined = entsoe.merge(elbruk, on='date')
-    combined['entsoe_avg'] = (c.convert('EUR','SEK',combined['entsoe_avg']) / 1000) * 100
-    # combined.columns = ["date", "entsoe_avg", "elbruk_dagspris"]
-    print(combined.dtypes)
-    # combined["date"] = pd.to_datetime(combined["date"]).strftime(
-    #                 "%Y-%m-%d"
-    #             )
-    # print(day_ahead_prices.mean())
     combined = combined.loc[:, ~combined.columns.str.contains('^Unnamed')]
     schema = DataFrameSchema(
         {
@@ -62,9 +55,7 @@ def g():
     )
     combined = schema.validate(combined)
     schema.to_json("../pandera_schemas/price-pipeline-daily-schema.json")
-    # print(combined)
 
-    # print(price_predictions)
     fs = project.get_feature_store()
 
     price_data_fg = fs.get_feature_group(
